@@ -1,4 +1,5 @@
 <?php
+$_dbhandle = new PDO('sqlite:/var/www/new/loglines.db');
 $sts = array();
 $sts['100'] = 'Continue';
 $sts['101'] = 'Switching Protocols';
@@ -41,6 +42,56 @@ $sts['502'] = 'Bad Gateway';
 $sts['503'] = 'Service Unavailable';
 $sts['504'] = 'Gateway Timeout';
 $sts['505'] = 'HTTP Version Not Supported';
+function rereadlog($logfile, $order){
+// read the designated logfile and store in temporary database
+    global $_dbhandle;
+
+	//~ $data = file($logfile);
+	//~ if ($order=='desc') {
+        //~ array_reverse($data);
+    //~ }
+	//~ $cmd = 'DROP TABLE log;';
+    //~ $result = $_dbhandle->query($cmd);
+    //~ echo
+    //~ $cmd = 'CREATE TABLE log (id INTEGER PRIMARY KEY, line varchar(1000) NOT NULL);';
+    //~ $result = $_dbhandle->query($cmd);
+	//~ $_dbhandle->commit();
+    //~ $sql = $_dbhandle->prepare( 'INSERT INTO log VALUES (?, ?)'; );
+    //~ print_r($sql); echo "\n";
+    //~ $sql->execute( array_indexes($data), array_keys($data) );
+	//~ $_dbhandle->commit();
+    $total = $_dbhandle->query( 'SELECT COUNT * FROM log;' );
+	//~ $_dbhandle->close();
+    return $total;
+}
+function readlines($top, $count) {
+// geeft het aantal gelezen regels terug
+// read first/next/prev/last <count> lines from database, starting at <top>
+    global $logdir;
+    global $iserrorlog;
+    global $_dbhandle;
+    $mld = '';
+    $lines = $_dbhandle->query('SELECT line FROM log WHERE id BETWEEN '.$top.' and '.
+        $top + $count .';') ;
+    $i = 0;
+    foreach ($lines as $line) {
+        ?><tr><?php
+        //~ print_r($iserrorlog); echo "\n";
+        if ($iserrorlog) {
+            $r = showerror(rtrim($line));
+            print_r($r); echo "\n";
+            //~ echo '<td><textarea style="font-size: 8pt" rows="4" cols="25">'.$r["date"].'</textarea></td><td><textarea style="font-size: 8pt" rows="4" cols="70">'.$r["data"].'</textarea></td><td><textarea style="font-size: 8pt" rows="4" cols="35">'.$r["referer"].' from'.$r["client"].'</textarea></td>';
+        }
+        else{
+            $r = showaccess(rtrim($line));
+            print_r($r); echo "\n";
+            //~ echo '<td><textarea font-size: 8pt" rows="4" cols="25">'.$r["date"].'</textarea></td><td><textarea font-size: 8pt" rows="4" cols="60">'.$r["data"].'</textarea></td><td><textarea font-size: 8pt" rows="4" cols="25">'.$r["client"].'</textarea></td>';
+        }
+        ?></tr><?php
+        $i++;
+    }
+    return $i;
+}
 function showerror($x) {
     $r = array("referer"=>'',"client"=>'',"date"=>'',"data"=>'');
     $h = explode(', referer: ',$x);
